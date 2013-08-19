@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+<body>
+<input id="start" type="button" value="Start" />
+<input id="stop"  type="button" value="Stop" />
+<input id="simd"  type="button" value="Use SIMD" />
+<span id="info">Not using SIMD</span>, FPS: <span id="fps">0.0</span>
+<br />
+<canvas id="mandel" width="600" height="400" />
+    <script type="application/dart" src="mandelbrot.dart"></script>
+    <script src="packages/browser/dart.js"></script>
+</body>
+</html>

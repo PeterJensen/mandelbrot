@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script type="text/javascript" src="jquery-1.8.3.js"></script>
+<script type="text/javascript" src="mandelbrot.js"></script>
+<script type="text/javascript" src="ecmascript_simd.js"></script>
+</head>
+<body>
+<input id="start" type="button" value="Start" />
+<input id="stop"  type="button" value="Stop" />
+<input id="simd"  type="button" value="Use SIMD" />
+<span id="info">Not using SIMD</span>, FPS: <span id="fps">0.0</span>
+<br />
+<!---
+<canvas id="mandel" width="150" height="100">
+-->
+<canvas id="mandel" width="600" height="400">
+</body>
+</html>
