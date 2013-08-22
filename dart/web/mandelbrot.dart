@@ -92,34 +92,33 @@ int mandelx1 (double c_re, double c_im, int max_iterations) {
   return i;
 }
 
+Uint32x4 one4    = new Uint32x4(1, 1, 1, 1);
+
 Uint32x4 mandelx4(Float32x4 c_re4, Float32x4 c_im4, int max_iterations) {
   Float32x4 z_re4  = c_re4;
   Float32x4 z_im4  = c_im4;
   Float32x4 four4  = new Float32x4.splat (4.0);
   Float32x4 two4   = new Float32x4.splat (2.0);
-  Uint32x4 count4  = new Uint32x4(0, 0, 0, 0);
-  Uint32x4 one4    = new Uint32x4(1, 1, 1, 1);
+  
+  // Note: the .bool constructor is faster than using the default one.
+  Uint32x4 count4  = new Uint32x4.bool(false, false, false, false);
+  // Note: trick to force one4 to be unboxed
+  one4 = one4 + count4;
 
   for (int i = 0; i < max_iterations; ++i) {
     Float32x4 z_re24 = z_re4 * z_re4;
     Float32x4 z_im24 = z_im4 * z_im4;
     Uint32x4 mi4    = (z_re24 + z_im24).lessThan (four4);
-    if (mi4.x == 0 && mi4.y == 0 && mi4.z == 0 && mi4.w == 0) {
-      // kind of inefficient!
-      // Maybe have a primitive for .isAllZero() on Uint32x4 values
+    bool done = mi4.signMask == 0x0;
+    if (done) {
       break;
     }
     Float32x4 new_re4 = z_re24 - z_im24;
     Float32x4 new_im4 = two4 * z_re4 * z_im4;
     z_re4 = c_re4 + new_re4;
     z_im4 = c_im4 + new_im4;
-    // This would be ideal.  Unfortunately, there's no '+' operator on Uint32x4
-    //count4      = count4 + (mi4 & one4);
     Uint32x4 add01 = mi4 & one4;
-    count4 = count4.withX (count4.x + add01.x);
-    count4 = count4.withY (count4.y + add01.y);
-    count4 = count4.withZ (count4.z + add01.z);
-    count4 = count4.withW (count4.w + add01.w);
+    count4 = count4 + add01;
   }
   return count4;
 }
