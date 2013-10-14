@@ -100,30 +100,28 @@ function mandelx1 (c_re, c_im, max_iterations) {
 }
 
 function mandelx4(c_re4, c_im4, max_iterations) {
-  var z_re4  = SIMD.toFloat32x4 (c_re4);  // create a clone, rename to .clone() ???
-  var z_im4  = SIMD.toFloat32x4 (c_im4);  // create a clone
-  var four4  = new Float32x4 (4.0, 4.0, 4.0, 4.0);
-  var two4   = new Float32x4 (2.0, 2.0, 2.0, 2.0);
-  var count4 = new Uint32x4  (0,   0,   0,   0);
-  var one4   = new Uint32x4  (1,   1,   1,   1);
+  var z_re4  = c_re4;
+  var z_im4  = c_im4;
+  var four4  = float32x4.splat (4.0);
+  var two4   = float32x4.splat (2.0);
+  var count4 = uint32x4.splat (0);
+  var one4   = uint32x4.splat (1);
 
   for (var i = 0; i < max_iterations; ++i) {
-    var z_re24 = SIMD.mul(z_re4, z_re4);
-    var z_im24 = SIMD.mul(z_im4, z_im4);
-    var mi4    = SIMD.lessThan (SIMD.add (z_re24, z_im24), four4);
-    if (mi4.x === 0 && mi4.y === 0 && mi4.z === 0 && mi4.w === 0) {
-      // kind of inefficient!
-      // Maybe have a primitive for _mm_movemask?  e.g.
-      //    SIMD.moveMask (SIMD.equal (Uint32x4.zero(), mi4)) === 0xf
-      // OR:
-      //    Simply a SIMD.isZero() primitive
+    var z_re24 = SIMD.mul (z_re4, z_re4);
+    var z_im24 = SIMD.mul (z_im4, z_im4);
+
+    var mi4    = SIMD.lessThanOrEqual (SIMD.add (z_re24, z_im24), four4);
+    // if all 4 values are greater than 4.0, there's no reason to continue
+    if (mi4.signMask === 0x00) {
       break;
     }
+
     var new_re4 = SIMD.sub (z_re24, z_im24);
     var new_im4 = SIMD.mul (SIMD.mul (two4, z_re4), z_im4);
     z_re4       = SIMD.add (c_re4, new_re4);
     z_im4       = SIMD.add (c_im4, new_im4);
-    count4      = SIMD.add (count4, SIMD.and (mi4, one4));
+    count4      = SIMD.addu32 (count4, SIMD.and (mi4, one4));
   }
   return count4;
 }
@@ -142,8 +140,8 @@ function drawMandelbrot (width, height, iterations, xc, yc, scale, use_simd) {
     if (use_simd) {
       var ydx4 = 4*yd;
       for (var y = 0; y < height; y += 4) {
-        var xf4 = new Float32x4(xf, xf, xf, xf);
-        var yf4 = new Float32x4(yf, yf+yd, yf+yd+yd, yf+yd+yd+yd);
+        var xf4 = float32x4(xf, xf, xf, xf);
+        var yf4 = float32x4(yf, yf+yd, yf+yd+yd, yf+yd+yd+yd);
         var m4   = mandelx4 (xf4, yf4, iterations);
         canvas.setPixel (x, y,   canvas.colorMap (m4.x, iterations));
         canvas.setPixel (x, y+1, canvas.colorMap (m4.y, iterations));
@@ -182,6 +180,9 @@ function animateMandelbrot () {
   var now         = performance.now();
 
   function draw1 () {
+    if (animate) {
+      setTimeout (draw1, 1);
+    }
     drawMandelbrot (canvas.getWidth(), canvas.getHeight(), 100, xc, yc, scale, use_simd);
     if (scale < scale_end || scale > scale_start) {
       scale_step = -scale_step;
@@ -197,10 +198,8 @@ function animateMandelbrot () {
       update_fps (10000/(t - now));
       now = t;
     }
-    if (animate) {
-      setTimeout (draw1, 1);
-    }
   }  
+
   draw1 ();
 }
 
