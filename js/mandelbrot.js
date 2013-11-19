@@ -219,18 +219,19 @@ function stop() {
   animate = false;
 }
 
-function simd () {
+function simd() {
+  logger.msg("use SIMD clicked");
   var $simd = $("#simd");
   var $info = $("#info");
-  if ($simd.val () === "Use SIMD") {
+  if (!use_simd) {
     use_simd = true;
-    $simd.val("Don't use SIMD");
-    $info.text("Using SIMD");
+    $simd.text("Don't use SIMD");
+    $info.text("SIMD");
   }
   else {
     use_simd = false;
-    $simd.val("Use SIMD");
-    $info.text("Not using SIMD");
+    $simd.text("Use SIMD");
+    $info.text("No SIMD");
   }
 }
 
