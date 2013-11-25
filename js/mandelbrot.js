@@ -2,8 +2,9 @@
 // Author: Peter Jensen, Intel Corporation
 
 // global variables
-var animate  = false;
-var use_simd = false;
+var animate        = false;
+var use_simd       = false;
+var max_iterations = 100;
 
 // logging operations
 var logger = {
@@ -49,16 +50,36 @@ var canvas = function () {
     _image_data.data[index+2] = rgb[2];
     _image_data.data[index+3] = 255;
   }
-  
-  function colorMap (value, max) {
-    if (value === max) {
-      return [0,0,0];
+
+  function colorMap(value) {
+      if (value === max_iterations) {
+          return [0, 0, 0];
+      }
+      var rgb = (value * 0xffff / max) * 0xff;
+      var red = rgb & 0xff;
+      var green = (rgb >> 8) & 0xff;
+      var blue = (rgb >> 16) & 0xff;
+      return [red, green, blue];
+  }
+
+  function mapColorAndSetPixel (x, y, value) {
+    var rgb, r, g, b;
+    var index = 4*(x + _width*y);
+    if (value === max_iterations) {
+      r = 0;
+      g = 0;
+      b = 0;
     }
-    var rgb = (value*0xffff/max)*0xff;
-    var red   = rgb & 0xff;
-    var green = (rgb >> 8) & 0xff;
-    var blue  = (rgb >> 16) & 0xff;
-    return [red, green, blue];
+    else {
+      rgb = (value*0xffff/max_iterations)*0xff;
+      r = rgb & 0xff;
+      g = (rgb >> 8) & 0xff;
+      b = (rgb >> 16) & 0xff;
+    }
+    _image_data.data[index]   = r;
+    _image_data.data[index+1] = g;
+    _image_data.data[index+2] = b;
+    _image_data.data[index+3] = 255;
   }
 
   function getWidth () {
@@ -70,18 +91,19 @@ var canvas = function () {
   }
   
   return {
-    init:      init,
-    clear:     clear,
-    update:    update,
-    setPixel:  setPixel,
-    getWidth:  getWidth,
-    getHeight: getHeight,
-    colorMap:  colorMap
+    init:                init,
+    clear:               clear,
+    update:              update,
+    setPixel:            setPixel,
+    getWidth:            getWidth,
+    getHeight:           getHeight,
+    colorMap:            colorMap,
+    mapColorAndSetPixel: mapColorAndSetPixel
   }
 
 }();
 
-function mandelx1 (c_re, c_im, max_iterations) {
+function mandelx1 (c_re, c_im) {
   var z_re = c_re,
       z_im = c_im,
       i;
@@ -99,7 +121,7 @@ function mandelx1 (c_re, c_im, max_iterations) {
   return i;
 }
 
-function mandelx4(c_re4, c_im4, max_iterations) {
+function mandelx4(c_re4, c_im4) {
   var z_re4  = c_re4;
   var z_im4  = c_im4;
   var four4  = float32x4.splat (4.0);
@@ -126,7 +148,7 @@ function mandelx4(c_re4, c_im4, max_iterations) {
   return count4;
 }
 
-function drawMandelbrot (width, height, iterations, xc, yc, scale, use_simd) {
+function drawMandelbrot (width, height, xc, yc, scale, use_simd) {
   var x0 = xc - 1.5*scale;
   var y0 = yc - scale;
   var xd = (3.0*scale)/width;
@@ -142,18 +164,18 @@ function drawMandelbrot (width, height, iterations, xc, yc, scale, use_simd) {
       for (var y = 0; y < height; y += 4) {
         var xf4 = float32x4(xf, xf, xf, xf);
         var yf4 = float32x4(yf, yf+yd, yf+yd+yd, yf+yd+yd+yd);
-        var m4   = mandelx4 (xf4, yf4, iterations);
-        canvas.setPixel (x, y,   canvas.colorMap (m4.x, iterations));
-        canvas.setPixel (x, y+1, canvas.colorMap (m4.y, iterations));
-        canvas.setPixel (x, y+2, canvas.colorMap (m4.z, iterations));
-        canvas.setPixel (x, y+3, canvas.colorMap (m4.w, iterations));
+        var m4   = mandelx4 (xf4, yf4);
+        canvas.mapColorAndSetPixel (x, y,   m4.x);
+        canvas.mapColorAndSetPixel (x, y+1, m4.y);
+        canvas.mapColorAndSetPixel (x, y+2, m4.z);
+        canvas.mapColorAndSetPixel (x, y+3, m4.w);
         yf += ydx4;
       }
     }
     else {
       for (var y = 0; y < height; ++y) {
-        var m = mandelx1 (xf, yf, iterations);
-        canvas.setPixel (x, y, canvas.colorMap (m, iterations));
+        var m = mandelx1 (xf, yf);
+        canvas.mapColorAndSetPixel (x, y, m);
         yf += yd;
       }
     }
@@ -183,7 +205,7 @@ function animateMandelbrot () {
     if (animate) {
       setTimeout (draw1, 1);
     }
-    drawMandelbrot (canvas.getWidth(), canvas.getHeight(), 100, xc, yc, scale, use_simd);
+    drawMandelbrot (canvas.getWidth(), canvas.getHeight(), xc, yc, scale, use_simd);
     if (scale < scale_end || scale > scale_start) {
       scale_step = -scale_step;
       xc_step = -xc_step;
