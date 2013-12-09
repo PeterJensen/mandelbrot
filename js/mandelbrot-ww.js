@@ -35,7 +35,7 @@ var canvas = function () {
       _image_data.data[i] = 0;
       _image_data.data[i + 1] = 0;
       _image_data.data[i + 2] = 0;
-      _image_data.data[i + 3] = 0;
+      _image_data.data[i + 3] = 255;
     }
   }
 
@@ -44,7 +44,7 @@ var canvas = function () {
   }
 
   function updateFromImageData(image_data) {
-    _image_data.data = image_data;
+    _image_data.data.set(image_data);
     _ctx.putImageData(_image_data, 0, 0);
   }
 
@@ -126,12 +126,21 @@ function animateMandelbrot () {
   var i           = 0;
   var now         = performance.now();
 
-  var worker = new Worker('mandelbrot-worker.js');
-  var image_buffer = new Uint32Array(canvas.getWidth() * canvas.getHeight() * 4);
-  worker.addEventListener('message', updateFrame, false);
+  var worker1 = new Worker('mandelbrot-worker.js');
+  var worker2 = new Worker('mandelbrot-worker.js');
+  var worker3 = new Worker('mandelbrot-worker.js');
+  var workers = [worker1, worker2, worker3];
+  
+  var buffer1 = new Uint8ClampedArray(canvas.getWidth() * canvas.getHeight() * 4);
+  var buffer2 = new Uint8ClampedArray(canvas.getWidth() * canvas.getHeight() * 4);
+  var buffer3 = new Uint8ClampedArray(canvas.getWidth() * canvas.getHeight() * 4);
+  var buffers = [buffer1, buffer2, buffer3];
+  
+  worker1.addEventListener('message', updateFrame, false);
+  worker2.addEventListener('message', updateFrame, false);
 
-  function requestFrame() {
-    worker.postMessage(
+  function requestFrame(worker_index) {
+    workers[worker_index].postMessage(
       { width:          canvas.getWidth(),
         height:         canvas.getHeight(),
         xc:             xc,
@@ -139,13 +148,17 @@ function animateMandelbrot () {
         scale:          scale,
         use_simd:       use_simd,
         max_iterations: max_iterations,
-        buffer:         image_buffer.buffer
+        worker_index:   worker_index,
+        buffer:         buffers[worker_index].buffer
       },
-      [image_buffer.buffer]);
+      [buffers[worker_index].buffer]);
   }
 
   function updateFrame(e) {
-    canvas.updateFromImageData(new Uint8ClampedArray (e.data.buffer));
+    var worker_index = e.data.worker_index;
+    buffers[worker_index] = new Uint8ClampedArray (e.data.buffer);
+    canvas.updateFromImageData(buffers[worker_index]);
+    
     if (!animate) {
       return;
     }
@@ -163,10 +176,12 @@ function animateMandelbrot () {
       update_fps (10000/(t - now));
       now = t;
     }
-    requestFrame ();
+    requestFrame (e.data.worker_index);
   }
 
-  requestFrame();
+  requestFrame(0);
+  requestFrame(1);
+  requestFrame(2);
 }
 
 function update_fps (fps) {
@@ -209,7 +224,7 @@ function main () {
   $("#start").click (start);
   $("#stop").click (stop);
   $("#simd").click (simd);
-  animateMandelbrot ();
+  //animateMandelbrot ();
 }
 
 $(main);

@@ -1,15 +1,18 @@
 self.addEventListener ("message", computeFrame, false);
 
 var max_iterations;
-var image_data;
+var image_buffer;
+var width;
+var heigth;
 
 function computeFrame (e) {
    max_iterations = e.data.max_iterations;
-   image_data   = new Uint8ClampedArray (e.data.image_buffer);
+   image_buffer = new Uint8ClampedArray (e.data.buffer);
    width        = e.data.width;
    height       = e.data.height;
    drawMandelbrot (e.data);
-   self.postMessage ({buffer: e.data.buffer}, [e.data.buffer]);
+   self.postMessage ({worker_index: e.data.worker_index, buffer: e.data.buffer}, [e.data.buffer]);
+//   self.postMessage ({worker_index: e.data.worker_index, buffer: e.data.buffer});
 }
 
 function mandelx1 (c_re, c_im) {
@@ -71,10 +74,10 @@ function mapColorAndSetPixel (x, y, value) {
     g = (rgb >> 8) & 0xff;
     b = (rgb >> 16) & 0xff;
   }
-  image_data[index]   = r;
-  image_data[index+1] = g;
-  image_data[index+2] = b;
-  image_data[index+3] = 255;
+  image_buffer[index]   = r;
+  image_buffer[index+1] = g;
+  image_buffer[index+2] = b;
+  image_buffer[index+3] = 255;
 }
 
 function drawMandelbrot (params) {
