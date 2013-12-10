@@ -55,7 +55,7 @@
 }
 
 .btn {
-  width: 150px;
+  width: 145px;
   display: inline-block;
   margin-bottom: 0;
   font-weight: normal;
@@ -66,6 +66,10 @@
   background-image: none;
   border: 1px solid transparent;
   -webkit-user-select: none;
+}
+
+.btn-narrow {
+  width: 70px;
 }
 
 button {

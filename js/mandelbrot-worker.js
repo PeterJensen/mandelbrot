@@ -6,12 +6,17 @@ var width;
 var heigth;
 
 function computeFrame (e) {
-   max_iterations = e.data.max_iterations;
-   image_buffer = new Uint8ClampedArray (e.data.buffer);
-   width        = e.data.width;
-   height       = e.data.height;
-   drawMandelbrot (e.data);
-   self.postMessage ({worker_index: e.data.worker_index, buffer: e.data.buffer}, [e.data.buffer]);
+  if (typeof e.data.terminate !== "undefined") {
+    self.close ();
+    return;
+  } 
+  var message = e.data.message;
+  max_iterations = message.max_iterations;
+  image_buffer = new Uint8ClampedArray (e.data.buffer);
+  width        = message.width;
+  height       = message.height;
+  drawMandelbrot (message);
+  self.postMessage ({worker_index: e.data.worker_index, message: message, buffer: e.data.buffer}, [e.data.buffer]);
 //   self.postMessage ({worker_index: e.data.worker_index, buffer: e.data.buffer});
 }
 

@@ -5,6 +5,7 @@
 var animate        = false;
 var use_simd       = false;
 var max_iterations = 100;
+var worker_count   = 1;
 
 // logging operations
 var logger = {
@@ -107,7 +108,79 @@ var canvas = function () {
     mapColorAndSetPixel: mapColorAndSetPixel
   }
 
-} ();
+}();
+
+var mandelbrotWorkers = function () {
+
+  // private
+
+  var mWorkers     = [];
+  var mWorkerCode  = "mandelbrot-worker.js";
+  var mWorkerCount = 0;
+
+  function mWorker (wworker, handler, bufferSize) {
+    this.wworker = wworker;
+    this.buffer  = new ArrayBuffer (bufferSize);
+    this.handler = handler;
+  }
+
+  // public
+
+  function addWorker(handler, bufferSize) {
+    var wworker = new Worker (mWorkerCode);
+    var worker  = new mWorker (wworker, handler, bufferSize);
+    mWorkers [mWorkerCount] = worker;
+    wworker.addEventListener('message', handler, false);
+    mWorkerCount++;
+    return mWorkerCount - 1;
+  }
+
+  function sendRequest(worker_index, message) {
+    var w = mWorkers [worker_index].wworker;
+    var b = mWorkers [worker_index].buffer;
+    w.postMessage ({message: message, worker_index: worker_index, buffer: b}, [b]);
+  }
+
+  function restoreBuffer(worker_index, buffer) {
+    mWorkers[worker_index].buffer = buffer;
+  }
+
+  function terminateLastWorker() {
+    var mw = mWorkers [mWorkerCount-1];
+    mw.wworker.postMessage({terminate:true});    
+    mWorkerCount--;
+  }
+
+  function terminateAllWorkers() {
+    while (mWorkerCount > 1) {
+      terminateLastWorker ();
+    }
+  }
+
+  function numberOfWorkers() {
+    return mWorkerCount;
+  }
+
+  function bufferOf(worker_index) {
+    return mWorkers[worker_index].buffer;
+  }
+
+  function workerIsActive(worker_index) {
+    return worker_index < mWorkerCount;
+  }
+
+  return {
+    addWorker:           addWorker,
+    sendRequest:         sendRequest,
+    restoreBuffer:       restoreBuffer,
+    terminateLastWorker: terminateLastWorker,
+    terminateAllWorkers: terminateAllWorkers,
+    numberOfWorkers:     numberOfWorkers,
+    bufferOf:            bufferOf,
+    workerIsActive:      workerIsActive
+  };
+
+}();
 
 function animateMandelbrot () {
   var scale_start = 1.0;
@@ -123,45 +196,111 @@ function animateMandelbrot () {
   var scale       = scale_start;
   var xc          = xc_start;
   var yc          = yc_start;
-  var i           = 0;
+  var frame_count   = 0;  // number of frames painted to the canvas
+  var request_count = 0;  // number of frames requested from workers
   var now         = performance.now();
+  var width       = canvas.getWidth();
+  var height      = canvas.getHeight();
+  var bufferSize  = width*height*4;
+  var pending_frames = [];
 
-  var worker1 = new Worker('mandelbrot-worker.js');
-  var worker2 = new Worker('mandelbrot-worker.js');
-  var worker3 = new Worker('mandelbrot-worker.js');
-  var workers = [worker1, worker2, worker3];
-  
-  var buffer1 = new Uint8ClampedArray(canvas.getWidth() * canvas.getHeight() * 4);
-  var buffer2 = new Uint8ClampedArray(canvas.getWidth() * canvas.getHeight() * 4);
-  var buffer3 = new Uint8ClampedArray(canvas.getWidth() * canvas.getHeight() * 4);
-  var buffers = [buffer1, buffer2, buffer3];
-  
-  worker1.addEventListener('message', updateFrame, false);
-  worker2.addEventListener('message', updateFrame, false);
+  // Look for a frame with 'frame_index' in the pending frames
+  function findFrame(frame_index) {
+    for (var i = 0, n = pending_frames.length; i < n; ++i) {
+      if (pending_frames[i].frame_index === frame_index) {
+        return i;
+      }
+    }
+    return false;
+  }
 
+  // Send a request to a worker to compute a frame
   function requestFrame(worker_index) {
-    workers[worker_index].postMessage(
-      { width:          canvas.getWidth(),
-        height:         canvas.getHeight(),
+    mandelbrotWorkers.sendRequest(
+      worker_index,
+      { request_count:  request_count,
+        width:          width,
+        height:         height,
         xc:             xc,
         yc:             yc,
         scale:          scale,
         use_simd:       use_simd,
-        max_iterations: max_iterations,
-        worker_index:   worker_index,
-        buffer:         buffers[worker_index].buffer
-      },
-      [buffers[worker_index].buffer]);
+        max_iterations: max_iterations});
+    request_count++;
   }
 
+  function paintFrame(buffer) {
+    canvas.updateFromImageData(buffer);
+    if (((frame_count % 20)|0) === 0) {
+      var t = performance.now();
+      update_fps (20000/(t - now));
+      now = t;
+    }
+  }
+
+  // Called when a worker has computed a frame
   function updateFrame(e) {
-    var worker_index = e.data.worker_index;
-    buffers[worker_index] = new Uint8ClampedArray (e.data.buffer);
-    canvas.updateFromImageData(buffers[worker_index]);
-    
-    if (!animate) {
+    var worker_index  = e.data.worker_index;
+    var request_count = e.data.message.request_count;
+    mandelbrotWorkers.restoreBuffer (worker_index, e.data.buffer);
+
+    if (mandelbrotWorkers.numberOfWorkers() < worker_count) {
+      // add another worker
+      var new_worker = mandelbrotWorkers.addWorker (updateFrame, bufferSize);
+      requestFrame (new_worker);
+      advanceFrame ();
+    }
+    if (mandelbrotWorkers.numberOfWorkers() > worker_count) {
+      // terminate a worker
+      mandelbrotWorkers.terminateLastWorker ();
+    }
+
+    if (request_count !== frame_count) {
+      // frame came early, save it for later and do nothing now
+      pending_frames.push ({worker_index: worker_index, frame_index: request_count});
       return;
     }
+    
+    var buffer = new Uint8ClampedArray (e.data.buffer);
+    logger.msg ("Painting frame - no delay: " + frame_count);
+    paintFrame (buffer);
+    frame_count++
+
+    if (!animate) {
+      mandelbrotWorkers.terminateAllWorkers ();
+      return;
+    }
+
+    if (pending_frames.length > 0) {
+      // there are delayed frames queued up.  Process them
+      var frame;
+      while ((frame = findFrame (frame_count)) !== false) {
+        var windex = pending_frames[frame].worker_index;
+        pending_frames.splice (frame, 1); // remove the frame from the pending_frames
+        var buffer = new Uint8ClampedArray (mandelbrotWorkers.bufferOf (windex));
+        logger.msg ("Painting frame -  delayed: " + frame_count);
+        paintFrame(buffer);
+        frame_count++;
+        if (mandelbrotWorkers.workerIsActive(windex)) {
+          requestFrame(windex);
+          advanceFrame();
+        }
+        else {
+          logger.msg ("Worker is deactivated - 1");
+        }
+      }
+    }
+
+    if (mandelbrotWorkers.workerIsActive (e.data.worker_index)) {
+      requestFrame (e.data.worker_index);
+      advanceFrame ();
+    }
+    else {
+      logger.msg ("Worker is deactivated - 2");
+    }
+  }
+
+  function advanceFrame () {
     if (scale < scale_end || scale > scale_start) {
       scale_step = -scale_step;
       xc_step = -xc_step;
@@ -170,18 +309,11 @@ function animateMandelbrot () {
     scale += scale_step;
     xc += xc_step;
     yc += yc_step;
-    i++;
-    if (((i % 10)|0) === 0) {
-      var t = performance.now();
-      update_fps (10000/(t - now));
-      now = t;
-    }
-    requestFrame (e.data.worker_index);
   }
 
+  mandelbrotWorkers.addWorker (updateFrame, bufferSize);
   requestFrame(0);
-  requestFrame(1);
-  requestFrame(2);
+  advanceFrame();
 }
 
 function update_fps (fps) {
@@ -200,19 +332,33 @@ function stop() {
   animate = false;
 }
 
+function ww_add() {
+  var $ww_count = $("#ww_count");
+  worker_count++;
+  $ww_count.text (worker_count);
+}
+
+function ww_sub() {
+  var $ww_count = $("#ww_count");
+  if (worker_count > 1) {
+    worker_count--;
+    $ww_count.text (worker_count);
+  }
+}
+
 function simd() {
   logger.msg("use SIMD clicked");
   var $simd = $("#simd");
   var $info = $("#info");
   if (!use_simd) {
     use_simd = true;
-    $simd.text("Don't use SIMD");
-    $info.text("SIMD");
+    $simd.text("Turn Off SIMD");
+    $info.text("On");
   }
   else {
     use_simd = false;
-    $simd.text("Use SIMD");
-    $info.text("No SIMD");
+    $simd.text("Turn On SIMD");
+    $info.text("Off");
   }
 }
 
@@ -224,6 +370,8 @@ function main () {
   $("#start").click (start);
   $("#stop").click (stop);
   $("#simd").click (simd);
+  $("#ww_add").click (ww_add);
+  $("#ww_sub").click (ww_sub);
   //animateMandelbrot ();
 }
 
