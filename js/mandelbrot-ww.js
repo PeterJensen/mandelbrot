@@ -110,6 +110,7 @@ var canvas = function () {
 
 }();
 
+// Web Worker management
 var mandelbrotWorkers = function () {
 
   // private
@@ -152,7 +153,7 @@ var mandelbrotWorkers = function () {
   }
 
   function terminateAllWorkers() {
-    while (mWorkerCount > 1) {
+    while (mWorkerCount > 0) {
       terminateLastWorker ();
     }
   }
@@ -182,6 +183,7 @@ var mandelbrotWorkers = function () {
 
 }();
 
+// The main animation function
 function animateMandelbrot () {
   var scale_start = 1.0;
   var scale_end   = 0.0005;
@@ -229,11 +231,12 @@ function animateMandelbrot () {
     request_count++;
   }
 
+  // Send the pixels to the canvas, and update the FPS measurement
   function paintFrame(buffer) {
     canvas.updateFromImageData(buffer);
-    if (((frame_count % 20)|0) === 0) {
+    if (frame_count > 0 && ((frame_count % 10)|0) === 0) {
       var t = performance.now();
-      update_fps (20000/(t - now));
+      update_fps (10000/(t - now));
       now = t;
     }
   }
@@ -243,6 +246,11 @@ function animateMandelbrot () {
     var worker_index  = e.data.worker_index;
     var request_count = e.data.message.request_count;
     mandelbrotWorkers.restoreBuffer (worker_index, e.data.buffer);
+
+    if (!animate) {
+      mandelbrotWorkers.terminateAllWorkers ();
+      return;
+    }
 
     if (mandelbrotWorkers.numberOfWorkers() < worker_count) {
       // add another worker
@@ -265,11 +273,6 @@ function animateMandelbrot () {
     logger.msg ("Painting frame - no delay: " + frame_count);
     paintFrame (buffer);
     frame_count++
-
-    if (!animate) {
-      mandelbrotWorkers.terminateAllWorkers ();
-      return;
-    }
 
     if (pending_frames.length > 0) {
       // there are delayed frames queued up.  Process them
@@ -324,7 +327,14 @@ function update_fps (fps) {
 // input click handlers
 
 function start() {
+  if (animate) {
+    // Do not start if it's already running
+    return;
+  }
+  var $ww_count = $("#ww_count");
   animate = true;
+  worker_count = 1;  // always start with one worker
+  $ww_count.text (worker_count);
   animateMandelbrot ();
 }
 
