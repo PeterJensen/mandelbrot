@@ -72,6 +72,12 @@
   width: 70px;
 }
 
+.btn-disable,.btn-disable:hover,.btn-disable:active,.btn-disable:focus
+{
+  background-color: #808080;
+  border-color: #808080;
+}
+
 button {
   -webkit-appearance: button;
   font: -webkit-small-control;
