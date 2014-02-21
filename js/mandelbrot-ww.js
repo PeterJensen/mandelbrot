@@ -379,7 +379,12 @@ function main () {
   canvas.update ();
   $("#start").click (start);
   $("#stop").click (stop);
-  $("#simd").click (simd);
+  if (typeof SIMD === "undefined") {
+    $("#simd").addClass("btn-disable");
+  }
+  else {
+    $("#simd").click (simd);
+  }
   $("#ww_add").click (ww_add);
   $("#ww_sub").click (ww_sub);
   //animateMandelbrot ();
