@@ -16,16 +16,19 @@
 (function () {
   "use strict";
 
-  // configuration constant
-  var config = {
-    width:  640,
-    height: 400
-  };
+  // available sizes
+  var sizes = {
+    SMALL:  {width: 160, height: 100},
+    MEDIUM: {width: 320, height: 200},
+    LARGE:  {width: 640, height: 400}
+  }
   
   // state variables
   var animate        = false;
+  var timer_id;
   var use_simd       = false;
   var max_iterations = 100;
+  var current_size   = "MEDIUM";
 
   // logging operations
   var logger = {
@@ -45,11 +48,11 @@
 
     function init (canvas_id) {
       var $canvas = $(canvas_id);
-      $canvas.attr("width", config.width);
-      $canvas.attr("height", config.height);
+      $canvas.attr("width", sizes[current_size].width);
+      $canvas.attr("height", sizes[current_size].height);
       _ctx        = $canvas.get(0).getContext("2d");
-      _width      = config.width;
-      _height     = config.height;
+      _width      = sizes[current_size].width;
+      _height     = sizes[current_size].height;
       _image_data = _ctx.getImageData (0, 0, _width, _height);
     }
 
@@ -65,6 +68,12 @@
 
     function update () {
       _ctx.putImageData (_image_data, 0, 0);
+    }
+
+    function reset (canvas_id) {
+      init(canvas_id);
+      clear();
+      update();
     }
 
     function setPixel (x, y, rgb) {
@@ -118,6 +127,7 @@
       init:                init,
       clear:               clear,
       update:              update,
+      reset:               reset,
       setPixel:            setPixel,
       getWidth:            getWidth,
       getHeight:           getHeight,
@@ -235,7 +245,7 @@
 
     function draw1 () {
       if (animate) {
-        setTimeout (draw1, 1);
+        timer_id = setTimeout (draw1, 1);
       }
       drawMandelbrot (canvas.getWidth(), canvas.getHeight(), xc, yc, scale, use_simd);
       if (scale < scale_end || scale > scale_start) {
@@ -257,15 +267,28 @@
     draw1 ();
   }
 
-  // input click handlers
-
-  function start() {
-    animate = true;
-    animateMandelbrot ();
+  function set_default_size() {
+    current_size = "LARGE";
+    if (typeof navigator.appVersion !== "undefined") {
+      if (navigator.appVersion.indexOf("Android") !== -1) {
+        current_size = "MEDIUM";
+      }
+    }
+    $("#size").text(current_size);
   }
 
-  function stop() {
-    animate = false;
+  // input click handlers
+
+  function start_stop() {
+    if (animate) {
+      $("#start_stop").text("START");
+      animate = false;
+    }
+    else {
+      $("#start_stop").text("STOP");
+      animate = true;
+      animateMandelbrot ();
+    }
   }
 
   function simd() {
@@ -284,14 +307,41 @@
     }
   }
 
+  function set_size() {
+    logger.msg("Size clicked");
+    var $size = $("#size");
+    if (current_size === "SMALL") {
+      current_size = "MEDIUM";
+    }
+    else if (current_size === "MEDIUM") {
+      current_size = "LARGE";
+    }
+    else {
+      current_size = "SMALL";
+    }
+    if (animate) {
+      animate = false;
+      clearTimeout(timer_id);
+    }
+
+    $size.text(current_size);
+    canvas.reset("#mandel");
+    animateMandelbrot ();
+  }
+
   function main () {
     logger.msg ("main()");
-    canvas.init ("#mandel");
-    canvas.clear ();
-    canvas.update ();
-    $("#start").click (start);
-    $("#stop").click (stop);
-    $("#simd").click (simd);
+    set_default_size();
+    canvas.reset ("#mandel");
+
+    $("#start_stop").click (start_stop);
+    if (typeof SIMD === "undefined") {
+      $("#simd").prop('disabled', true);
+    }
+    else {
+      $("#simd").click (simd);
+    }
+    $("#size").click(set_size);
     animateMandelbrot ();
   }
 

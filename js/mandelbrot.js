@@ -259,9 +259,6 @@ function simd() {
 
 function main () {
   logger.msg ("main()");
-  if (typeof SIMD === "undefined") {
-    $("#simd").addClass("btn-disable");
-  }
   canvas.init ("#mandel");
   canvas.clear ();
   canvas.update ();
