@@ -287,6 +287,7 @@
       mandelbrotWorkers.restoreBuffer (worker_index, e.data.buffer);
 
       if (!animate) {
+        paintFrame (new Uint8ClampedArray(e.data.buffer));
         mandelbrotWorkers.terminateAllWorkers ();
         return;
       }
