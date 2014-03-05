@@ -13,14 +13,14 @@
 
 .fps {
   position:absolute;
-  top:80px;
+  top:100px;
   color:white;
   font-weight:bold;
 }
 
 .simd {
   position:absolute;
-  top:30px;
+  top:50px;
   color:white;
   font-weight:bold;
 }

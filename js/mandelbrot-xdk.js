@@ -190,7 +190,7 @@
     var xd = (3.0*scale)/width;
     var yd = (2.0*scale)/height;
 
-    logger.msg ("drawMandelbrot(xc:" + xc + ", yc:" + yc + ")");
+//    logger.msg ("drawMandelbrot(xc:" + xc + ", yc:" + yc + ")");
 
     var xf = x0;
     var x, y;
