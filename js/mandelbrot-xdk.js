@@ -320,6 +320,7 @@
       current_size = "SMALL";
     }
     if (animate) {
+      $("#start_stop").text("START");
       animate = false;
       clearTimeout(timer_id);
     }

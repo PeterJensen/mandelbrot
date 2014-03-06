@@ -25,7 +25,6 @@
   
   // state variables
   var animate        = false;
-  var timer_id;
   var use_simd       = false;
   var max_iterations = 100;
   var current_size   = "MEDIUM";
@@ -415,8 +414,8 @@
       current_size = "SMALL";
     }
     if (animate) {
+      $("#start_stop").text("START");
       animate = false;
-      clearTimeout(timer_id);
     }
 
     $size.text(current_size);
