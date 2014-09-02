@@ -110,6 +110,10 @@ var canvas = function () {
 
 function asmjsModuleX4(global, imp) {
   "use asm";
+  if (typeof SIMD === "undefined") {
+    return null;
+  }
+
   var setPixel2 = imp.setPixel2;
   var toF = global.Math.fround;
   var i4 = global.SIMD.int32x4;
