@@ -221,9 +221,10 @@ var mandelx4Column = asmjsModuleX4(this, {setPixel2: canvas.setPixel2});
 function asmjsModuleX1(global, imp) {
   "use asm";
   var setPixel2 = imp.setPixel2;
-  var toF = global.Math.fround;
+  var toF  = global.Math.fround;
+  if (typeof toF === "undefined") toF = function(x) { return x;};
   const max_iterations = 100;
-  var imul=global.Math.imul;
+  var imul = global.Math.imul;
 
   function mandelx1(xf, yf, yd) {
     xf = toF(xf);
