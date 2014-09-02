@@ -94,8 +94,12 @@ function setPixel2(index, r, g, b) {
 
 function asmjsModuleX4(global, imp) {
   "use asm";
+  if (typeof SIMD === "undefined") {
+    return;
+  }
   var setPixel2 = imp.setPixel2;
   var toF = global.Math.fround;
+  if (typeof toF === "undefined") toF = function(x) {return x;};
   var i4 = global.SIMD.int32x4;
   var f4 = global.SIMD.float32x4;
   var i4add = i4.add;
@@ -203,14 +207,15 @@ function asmjsModuleX1(global, imp) {
   "use asm";
   var setPixel2 = imp.setPixel2;
   var toF = global.Math.fround;
-  var i4 = global.SIMD.int32x4;
-  var f4 = global.SIMD.float32x4;
-  var i4add = i4.add;
-  var i4and = i4.and;
-  var f4add = f4.add;
-  var f4sub = f4.sub;
-  var f4mul = f4.mul;
-  var f4lessThanOrEqual = f4.lessThanOrEqual
+  if (typeof toF === "undefined") toF = function(x) { return x;};
+//  var i4 = global.SIMD.int32x4;
+//  var f4 = global.SIMD.float32x4;
+//  var i4add = i4.add;
+//  var i4and = i4.and;
+//  var f4add = f4.add;
+//  var f4sub = f4.sub;
+//  var f4mul = f4.mul;
+//  var f4lessThanOrEqual = f4.lessThanOrEqual
   const max_iterations = 100;
   var imul=global.Math.imul;
 
