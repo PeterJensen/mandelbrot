@@ -9,6 +9,16 @@ var animate        = false;
 var use_simd       = false;
 var max_iterations = 100;
 
+// Polyfill and alerts
+if (typeof Math.fround == 'undefined') {
+  Math.fround = function(x) { return x };
+}
+if (typeof SIMD == 'undefined') {
+  // TODO maybe use the polyfill?
+  alert('SIMD not implemented in this browser');
+  throw 'SIMD not implemented in this browser';
+}
+
 // Asm.js module buffer.
 var buffer = new ArrayBuffer(16 * 1024 * 1024);
 
