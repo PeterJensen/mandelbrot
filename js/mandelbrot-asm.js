@@ -28,7 +28,7 @@ if (typeof SIMD == 'undefined') {
   } catch (e) {
     console.log('coercive ctors arent natively implemented');
 
-    function AugmentTypeX4(typeName) {
+    function augmentTypeX4(typeName) {
       var oldCtor = SIMD[typeName];
       function augmented(x,y,z,w) {
         if (arguments.length == 1)
@@ -45,8 +45,7 @@ if (typeof SIMD == 'undefined') {
       return augmented;
     }
 
-    //SIMD.float32x4 = AugmentTypeX4('float32x4');
-    SIMD.int32x4 = AugmentTypeX4('int32x4');
+    SIMD.int32x4 = augmentTypeX4('int32x4');
   }
 }
 
@@ -336,6 +335,9 @@ function animateMandelbrot () {
   var now         = performance.now();
 
   function draw1 () {
+    if (animate) {
+      setTimeout(draw1, 1);
+    }
     drawMandelbrot (canvas.getWidth(), canvas.getHeight(), xc, yc, scale, use_simd);
     if (scale < scale_end || scale > scale_start) {
       scale_step = -scale_step;
@@ -350,9 +352,6 @@ function animateMandelbrot () {
       var t = performance.now();
       update_fps (10000/(t - now));
       now = t;
-    }
-    if (animate) {
-      requestAnimationFrame(draw1);
     }
   }
 

@@ -1,5 +1,5 @@
 /* -*- Mode: javascript; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 ; js-indent-level : 2 ; js-curly-indent-offset: 0 -*- */
-/* vim: set ts=2 et sw=2 tw=80: */ 
+/* vim: set ts=2 et sw=2 tw=80: */
 
 // Polyfill and alerts
 if (typeof Math.fround == 'undefined') {
@@ -20,7 +20,7 @@ if (typeof SIMD == 'undefined') {
   } catch (e) {
     console.log('coercive ctors arent natively implemented');
 
-    function AugmentTypeX4(typeName) {
+    function augmentTypeX4(typeName) {
       var oldCtor = SIMD[typeName];
       function augmented(x,y,z,w) {
         if (arguments.length == 1)
@@ -37,8 +37,7 @@ if (typeof SIMD == 'undefined') {
       return augmented;
     }
 
-    //SIMD.float32x4 = AugmentTypeX4('float32x4');
-    SIMD.int32x4 = AugmentTypeX4('int32x4');
+    SIMD.int32x4 = augmentTypeX4('int32x4');
   }
 }
 
@@ -52,7 +51,7 @@ function computeFrame (e) {
   if (typeof e.data.terminate !== "undefined") {
     self.close ();
     return;
-  } 
+  }
   var message = e.data.message;
 
   // Draw the image to the local asm.js buffer.
