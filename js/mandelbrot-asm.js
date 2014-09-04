@@ -17,6 +17,37 @@ if (typeof SIMD == 'undefined') {
   // TODO maybe use the polyfill?
   alert('SIMD not implemented in this browser');
   throw 'SIMD not implemented in this browser';
+} else {
+  // Polyfill coercive ctor
+  try {
+    var x = SIMD.float32x4(1,2,3,4);
+    var y = SIMD.float32x4(x);
+    if (y.x != x.x || y.y != x.y || y.z != x.z || y.w != x.w)
+      throw new Error('coercive ctor not implemented');
+    console.log('coercive ctors are natively implemented');
+  } catch (e) {
+    console.log('coercive ctors arent natively implemented');
+
+    function AugmentTypeX4(typeName) {
+      var oldCtor = SIMD[typeName];
+      function augmented(x,y,z,w) {
+        if (arguments.length == 1)
+          return x;
+        return oldCtor(x,y,z,w);
+      }
+      var names = Object.getOwnPropertyNames(SIMD[typeName]);
+      for (var i in names) {
+        var name = names[i];
+        if (name === 'prototype')
+          continue;
+        augmented[name] = SIMD[typeName][name];
+      }
+      return augmented;
+    }
+
+    //SIMD.float32x4 = AugmentTypeX4('float32x4');
+    SIMD.int32x4 = AugmentTypeX4('int32x4');
+  }
 }
 
 // Asm.js module buffer.
@@ -305,9 +336,6 @@ function animateMandelbrot () {
   var now         = performance.now();
 
   function draw1 () {
-    if (animate) {
-      setTimeout (draw1, 1);
-    }
     drawMandelbrot (canvas.getWidth(), canvas.getHeight(), xc, yc, scale, use_simd);
     if (scale < scale_end || scale > scale_start) {
       scale_step = -scale_step;
@@ -323,9 +351,12 @@ function animateMandelbrot () {
       update_fps (10000/(t - now));
       now = t;
     }
+    if (animate) {
+      requestAnimationFrame(draw1);
+    }
   }
 
-  draw1 ();
+  draw1();
 }
 
 function update_fps (fps) {
