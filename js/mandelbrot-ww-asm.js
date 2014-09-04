@@ -12,7 +12,7 @@ var logger = {
   msg: function (msg) {
     console.log (msg);
   }
-}    
+}
 
 // Basic canvas operations
 var canvas = function () {
@@ -148,7 +148,7 @@ var mandelbrotWorkers = function () {
 
   function terminateLastWorker() {
     var mw = mWorkers [mWorkerCount-1];
-    mw.wworker.postMessage({terminate:true});    
+    mw.wworker.postMessage({terminate:true});
     mWorkerCount--;
   }
 
@@ -268,7 +268,7 @@ function animateMandelbrot () {
       pending_frames.push ({worker_index: worker_index, frame_index: request_count});
       return;
     }
-    
+
     var buffer = new Uint8ClampedArray (e.data.buffer);
     logger.msg ("Painting frame - no delay: " + frame_count);
     paintFrame (buffer);

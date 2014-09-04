@@ -1,5 +1,5 @@
 /* -*- Mode: javascript; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 ; js-indent-level : 2 ; js-curly-indent-offset: 0 -*- */
-/* vim: set ts=2 et sw=2 tw=80: */ 
+/* vim: set ts=2 et sw=2 tw=80: */
 
 // Mandelbrot using SIMD
 // Author: Peter Jensen, Intel Corporation
@@ -27,7 +27,7 @@ var logger = {
   msg: function (msg) {
     console.log (msg);
   }
-}    
+}
 
 // Basic canvas operations
 var canvas = function () {
@@ -35,9 +35,8 @@ var canvas = function () {
   var _ctx;
   var _width;
   var _height;
-  
   var _image_data;
-  
+
   function init (canvas_id) {
     var $canvas = $(canvas_id);
     _ctx        = $canvas.get(0).getContext("2d");
@@ -45,21 +44,21 @@ var canvas = function () {
     _height     = $canvas.height();
     _image_data = _ctx.getImageData (0, 0, _width, _height);
   }
-  
+
   function update (buffer) {
     var imageData = new Uint8ClampedArray(buffer, 0, _width * _height * 4);
     _image_data.data.set(imageData);
     _ctx.putImageData(_image_data, 0, 0);
   }
-  
+
   function getWidth () {
     return _width;
   }
-  
+
   function getHeight () {
     return _height;
   }
-  
+
   return {
     init:                init,
     update:              update,
@@ -108,7 +107,7 @@ function asmjsModule (global, imp, buffer) {
       z_im2 = toF(z_im * z_im);
 
       if (toF(z_re2 + z_im2) > toF(4))
-	break;
+        break;
 
       new_re = toF(z_re2 - z_im2);
       new_im = toF(toF(z_re * toF(2)) * z_im);
@@ -144,7 +143,7 @@ function asmjsModule (global, imp, buffer) {
     b8[(index & mk0) + 2 >> 0] = b;
     b8[(index & mk0) + 3 >> 0] = 255;
   }
-    
+
   function mandelColumnX1 (x, width, height, xf, yf, yd, max_iterations) {
     x = x | 0;
     width = width | 0;
@@ -202,7 +201,7 @@ function asmjsModule (global, imp, buffer) {
 
     c_re4 = f4(xf, xf, xf, xf);
     c_im4 = f4(yf, toF(yd + yf), toF(yd + toF(yd + yf)), toF(yd + toF(yd + toF(yd + yf))));
-	
+
     z_re4  = c_re4;
     z_im4  = c_im4;
 
@@ -272,7 +271,7 @@ function asmjsModule (global, imp, buffer) {
       if (use_simd)
         mandelColumnX4(x, width, height, xf, y0, yd, max_iterations);
       else
-	mandelColumnX1(x, width, height, xf, y0, yd, max_iterations);
+        mandelColumnX1(x, width, height, xf, y0, yd, max_iterations);
       xf = toF(xf + xd);
     }
   }
@@ -324,7 +323,7 @@ function animateMandelbrot () {
       update_fps (10000/(t - now));
       now = t;
     }
-  }  
+  }
 
   draw1 ();
 }
