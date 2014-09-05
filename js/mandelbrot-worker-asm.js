@@ -78,7 +78,8 @@ function asmjsModule (global, imp, buffer) {
   var f4add = f4.add;
   var f4sub = f4.sub;
   var f4mul = f4.mul;
-  var f4lessThanOrEqual = f4.lessThanOrEqual
+  var f4lessThanOrEqual = f4.lessThanOrEqual;
+  var f4splat = f4.splat;
   var imul = global.Math.imul;
   const one4 = i4(1,1,1,1), two4 = f4(2,2,2,2), four4 = f4(4,4,4,4);
 
@@ -142,7 +143,7 @@ function asmjsModule (global, imp, buffer) {
     b8[(index & mk0) + 2 >> 0] = b;
     b8[(index & mk0) + 3 >> 0] = 255;
   }
-    
+
   function mandelColumnX1 (x, width, height, xf, yf, yd, max_iterations) {
     x = x | 0;
     width = width | 0;
@@ -198,9 +199,9 @@ function asmjsModule (global, imp, buffer) {
     var i = 0;
     var mi4 = i4(0,0,0,0);
 
-    c_re4 = f4(xf, xf, xf, xf);
+    c_re4 = f4splat(xf);
     c_im4 = f4(yf, toF(yd + yf), toF(yd + toF(yd + yf)), toF(yd + toF(yd + toF(yd + yf))));
-	
+
     z_re4  = c_re4;
     z_im4  = c_im4;
 
@@ -270,7 +271,7 @@ function asmjsModule (global, imp, buffer) {
       if (use_simd)
         mandelColumnX4(x, width, height, xf, y0, yd, max_iterations);
       else
-	mandelColumnX1(x, width, height, xf, y0, yd, max_iterations);
+        mandelColumnX1(x, width, height, xf, y0, yd, max_iterations);
       xf = toF(xf + xd);
     }
   }

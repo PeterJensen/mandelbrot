@@ -109,7 +109,8 @@ function asmjsModule (global, imp, buffer) {
   var f4add = f4.add;
   var f4sub = f4.sub;
   var f4mul = f4.mul;
-  var f4lessThanOrEqual = f4.lessThanOrEqual
+  var f4lessThanOrEqual = f4.lessThanOrEqual;
+  var f4splat = f4.splat;
   var imul = global.Math.imul;
   const one4 = i4(1,1,1,1), two4 = f4(2,2,2,2), four4 = f4(4,4,4,4);
 
@@ -229,7 +230,7 @@ function asmjsModule (global, imp, buffer) {
     var i = 0;
     var mi4 = i4(0,0,0,0);
 
-    c_re4 = f4(xf, xf, xf, xf);
+    c_re4 = f4splat(xf);
     c_im4 = f4(yf, toF(yd + yf), toF(yd + toF(yd + yf)), toF(yd + toF(yd + toF(yd + yf))));
 
     z_re4  = c_re4;
