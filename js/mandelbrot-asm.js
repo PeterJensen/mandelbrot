@@ -21,7 +21,7 @@ if (typeof SIMD == 'undefined') {
   // Polyfill coercive ctor
   try {
     var x = SIMD.float32x4(1,2,3,4);
-    var y = SIMD.float32x4(x);1
+    var y = SIMD.float32x4(x);
     if (y.x != x.x || y.y != x.y || y.z != x.z || y.w != x.w)
       throw new Error('coercive ctor not implemented');
     console.log('coercive ctors are natively implemented');
