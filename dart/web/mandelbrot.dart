@@ -92,23 +92,23 @@ int mandelx1 (double c_re, double c_im, int max_iterations) {
   return i;
 }
 
-Uint32x4 one4    = new Uint32x4(1, 1, 1, 1);
+Int32x4 one4    = new Int32x4(1, 1, 1, 1);
 
-Uint32x4 mandelx4(Float32x4 c_re4, Float32x4 c_im4, int max_iterations) {
+Int32x4 mandelx4(Float32x4 c_re4, Float32x4 c_im4, int max_iterations) {
   Float32x4 z_re4  = c_re4;
   Float32x4 z_im4  = c_im4;
   Float32x4 four4  = new Float32x4.splat (4.0);
   Float32x4 two4   = new Float32x4.splat (2.0);
   
   // Note: the .bool constructor is faster than using the default one.
-  Uint32x4 count4  = new Uint32x4.bool(false, false, false, false);
+  Int32x4 count4  = new Int32x4.bool(false, false, false, false);
   // Note: trick to force one4 to be unboxed
   one4 = one4 + count4;
 
   for (int i = 0; i < max_iterations; ++i) {
     Float32x4 z_re24 = z_re4 * z_re4;
     Float32x4 z_im24 = z_im4 * z_im4;
-    Uint32x4 mi4    = (z_re24 + z_im24).lessThan (four4);
+    Int32x4 mi4    = (z_re24 + z_im24).lessThan (four4);
     bool done = mi4.signMask == 0x0;
     if (done) {
       break;
@@ -117,7 +117,7 @@ Uint32x4 mandelx4(Float32x4 c_re4, Float32x4 c_im4, int max_iterations) {
     Float32x4 new_im4 = two4 * z_re4 * z_im4;
     z_re4 = c_re4 + new_re4;
     z_im4 = c_im4 + new_im4;
-    Uint32x4 add01 = mi4 & one4;
+    Int32x4 add01 = mi4 & one4;
     count4 = count4 + add01;
   }
   return count4;
@@ -139,7 +139,7 @@ void drawMandelbrot (int width, int height, int iterations, double xc, double yc
       for (int y = 0; y < height; y += 4) {
         Float32x4 xf4 = new Float32x4.splat(xf);
         Float32x4 yf4 = new Float32x4(yf, yf+yd, yf+yd+yd, yf+yd+yd+yd);
-        Uint32x4 m4   = mandelx4 (xf4, yf4, iterations);
+        Int32x4 m4   = mandelx4 (xf4, yf4, iterations);
         canvas.setPixel (x, y,   Canvas.colorMap (m4.x, iterations));
         canvas.setPixel (x, y+1, Canvas.colorMap (m4.y, iterations));
         canvas.setPixel (x, y+2, Canvas.colorMap (m4.z, iterations));
