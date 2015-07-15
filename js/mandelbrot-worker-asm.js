@@ -5,38 +5,6 @@
 if (typeof Math.fround == 'undefined') {
   Math.fround = function(x) { return x };
 }
-if (typeof SIMD != 'undefined') {
-  // Polyfill coercive ctor
-  try {
-    var x = SIMD.float32x4(1,2,3,4);
-    var y = SIMD.float32x4(x);
-    if (y.x != x.x || y.y != x.y || y.z != x.z || y.w != x.w)
-      throw new Error('coercive ctor not implemented');
-    console.log('coercive ctors are natively implemented');
-  } catch (e) {
-    console.log('coercive ctors arent natively implemented');
-
-    function augmentTypeX4(typeName) {
-      var oldCtor = SIMD[typeName];
-      function augmented(x,y,z,w) {
-        if (arguments.length == 1)
-          return x;
-        return oldCtor(x,y,z,w);
-      }
-      var names = Object.getOwnPropertyNames(SIMD[typeName]);
-      for (var i in names) {
-        var name = names[i];
-        if (name === 'prototype')
-          continue;
-        augmented[name] = SIMD[typeName][name];
-      }
-      return augmented;
-    }
-
-    SIMD.int32x4 = augmentTypeX4('int32x4');
-  }
-}
-
 self.addEventListener ("message", computeFrame, false);
 
 // Asm.js module buffer.
@@ -67,8 +35,9 @@ function asmjsModule (global, imp, buffer) {
   "use asm"
   var b8 = new global.Uint8Array(buffer);
   var toF = global.Math.fround;
-  var i4 = global.SIMD.int32x4;
-  var f4 = global.SIMD.float32x4;
+  var i4 = global.SIMD.Int32x4;
+  var f4 = global.SIMD.Float32x4;
+  var i4ext = i4.extractLane;
   var i4add = i4.add;
   var i4and = i4.and;
   var i4check = i4.check;
@@ -164,10 +133,10 @@ function asmjsModule (global, imp, buffer) {
     ydx4 = toF(yd * toF(4));
     for (y = 0; (y | 0) < (height | 0); y = (y + 4) | 0) {
       m4   = i4check(mandelPixelX4(toF(xf), toF(yf), toF(yd), max_iterations));
-      mapColorAndSetPixel(x | 0, y | 0,   width, m4.x, max_iterations);
-      mapColorAndSetPixel(x | 0, (y + 1) | 0, width, m4.y, max_iterations);
-      mapColorAndSetPixel(x | 0, (y + 2) | 0, width, m4.z, max_iterations);
-      mapColorAndSetPixel(x | 0, (y + 3) | 0, width, m4.w, max_iterations);
+      mapColorAndSetPixel(x | 0, y | 0,   width,     i4ext(m4, 0), max_iterations);
+      mapColorAndSetPixel(x | 0, (y + 1) | 0, width, i4ext(m4, 1), max_iterations);
+      mapColorAndSetPixel(x | 0, (y + 2) | 0, width, i4ext(m4, 2), max_iterations);
+      mapColorAndSetPixel(x | 0, (y + 3) | 0, width, i4ext(m4, 3), max_iterations);
       yf = toF(yf + ydx4);
     }
   }
