@@ -15,36 +15,6 @@ if (typeof Math.fround == 'undefined') {
 }
 if (typeof SIMD == 'undefined') {
   alert('SIMD not implemented in this browser. SIMD speedup button is disabled');
-} else {
-  // Polyfill coercive ctor
-  try {
-    var x = SIMD.float32x4(1,2,3,4);
-    var y = SIMD.float32x4(x);
-    if (y.x != x.x || y.y != x.y || y.z != x.z || y.w != x.w)
-      throw new Error('coercive ctor not implemented');
-    console.log('coercive ctors are natively implemented');
-  } catch (e) {
-    console.log('coercive ctors arent natively implemented');
-
-    function augmentTypeX4(typeName) {
-      var oldCtor = SIMD[typeName];
-      function augmented(x,y,z,w) {
-        if (arguments.length == 1)
-          return x;
-        return oldCtor(x,y,z,w);
-      }
-      var names = Object.getOwnPropertyNames(SIMD[typeName]);
-      for (var i in names) {
-        var name = names[i];
-        if (name === 'prototype')
-          continue;
-        augmented[name] = SIMD[typeName][name];
-      }
-      return augmented;
-    }
-
-    SIMD.int32x4 = augmentTypeX4('int32x4');
-  }
 }
 
 // Asm.js module buffer.
