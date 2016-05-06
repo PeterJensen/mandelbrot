@@ -50,7 +50,7 @@ function asmjsModule (global, imp, buffer) {
   var imul = global.Math.imul;
   var b4 = global.SIMD.Bool32x4;
   var b4any = b4.anyTrue;
-  const zero4 = i4(0,0,0,0), one4 = i4(1,1,1,1), two4 = f4(2,2,2,2), four4 = f4(4,4,4,4);
+  const zero4 = i4(0,0,0,0), one4 = i4(1,1,1,1), two4 = f4(2.0, 2.0, 2.0, 2.0), four4 = f4(4.0,4.0,4.0,4.0);
 
   const mk0 = 0x007fffff;
 
@@ -89,11 +89,11 @@ function asmjsModule (global, imp, buffer) {
     yf = toF(yf);
     yd = toF(yd);
     max_iterations = max_iterations | 0;
-    var c_re4  = f4(0,0,0,0), c_im4  = f4(0,0,0,0);
-    var z_re4  = f4(0,0,0,0), z_im4  = f4(0,0,0,0);
+    var c_re4  = f4(0.0,0.0,0.0,0.0), c_im4  = f4(0.0,0.0,0.0,0.0);
+    var z_re4  = f4(0.0,0.0,0.0,0.0), z_im4  = f4(0.0,0.0,0.0,0.0);
     var count4 = i4(0,0,0,0);
-    var z_re24 = f4(0,0,0,0), z_im24 = f4(0,0,0,0);
-    var new_re4 = f4(0,0,0,0), new_im4 = f4(0,0,0,0);
+    var z_re24 = f4(0.0,0.0,0.0,0.0), z_im24 = f4(0.0,0.0,0.0,0.0);
+    var new_re4 = f4(0.0,0.0,0.0,0.0), new_im4 = f4(0.0,0.0,0.0,0.0);
     var i = 0;
     var mb4 = b4(0,0,0,0);
 
@@ -109,7 +109,7 @@ function asmjsModule (global, imp, buffer) {
 
       mb4 = f4lessThanOrEqual(f4add(z_re24, z_im24), four4);
       // If all 4 values are greater than 4.0, there's no reason to continue.
-      if (!b4any(mb4))
+      if (!(b4any(mb4)|0))
         break;
 
       new_re4 = f4sub(z_re24, z_im24);
